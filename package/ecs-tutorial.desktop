@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=ECS Tutorial for Lisp Gamedev
+Exec=ecs-tutorial
+Terminal=false
+Categories=Game;
+Icon=icon
