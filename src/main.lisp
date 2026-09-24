@@ -93,8 +93,7 @@
       (unwind-protect
            (cffi:with-foreign-object (event '(:union al:event))
              (init)
-             (#+darwin trivial-main-thread:call-in-main-thread #-darwin funcall
-              #'livesupport:setup-lisp-repl)
+             (livesupport:setup-lisp-repl)
              (loop
                :named main-game-loop
                :with *font* := (al:ensure-loaded #'al:load-ttf-font
