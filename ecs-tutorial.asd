@@ -3,7 +3,7 @@
   :author "Ysgard"
   :license "MIT"
   :depends-on (#:alexandria
-               
+               #:cl-fast-ecs
                #:cl-liballegro
                #:cl-liballegro-nuklear
                

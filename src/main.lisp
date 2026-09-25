@@ -19,19 +19,99 @@
 
 (define-constant +config-path+ "../config.cfg" :test #'string=)
 
+;; Asteroid assets
+
+(define-constant asteroid-images
+    '("../Resources/a10000.png" "../Resources/a10001.png"
+      "../Resources/a10002.png" "../Resources/a10003.png"
+      "../Resources/a10004.png" "../Resources/a10005.png"
+      "../Resources/a10006.png" "../Resources/a10007.png"
+      "../Resources/a10008.png" "../Resources/a10009.png"
+      "../Resources/a10010.png" "../Resources/a10011.png"
+      "../Resources/a10012.png" "../Resources/a10013.png"
+      "../Resources/a10014.png" "../Resources/a10015.png"
+      "../Resources/b10000.png" "../Resources/b10001.png"
+      "../Resources/b10002.png" "../Resources/b10003.png"
+      "../Resources/b10004.png" "../Resources/b10005.png"
+      "../Resources/b10006.png" "../Resources/b10007.png"
+      "../Resources/b10008.png" "../Resources/b10009.png"
+      "../Resources/b10010.png" "../Resources/b10011.png"
+      "../Resources/b10012.png" "../Resources/b10013.png"
+      "../Resources/b10014.png" "../Resources/b10015.png")
+  :test #'equalp)
+
+;; Component definitions
+
+(ecs:define-component position
+  "Determines the location of the object, in pixels."
+  (x 0.0 :type single-float :documentation "X coordinate")
+  (y 0.0 :type single-float :documentation "Y coordinate"))
+
+(ecs:define-component speed
+  "Determines the speed of the object, in pixels/second."
+  (x 0.0 :type single-float :documentation "X coordinate")
+  (y 0.0 :type single-float :documentation "Y coordinate"))
+
+(ecs:define-component image
+  "Stores ALLEGRO_BITMAP structure pointer, size and scaling information"
+  (bitmap (cffi:null-pointer) :type cffi:foreign-pointer)
+  (width 0.0 :type single-float)
+  (height 0.0 :type single-float)
+  (scale 1.0 :type single-float))
+
+;; System definitions
+
+(ecs:define-system draw-images
+  (:components-ro (position image)
+   :initially (al:hold-bitmap-drawing t)
+   :finally (al:hold-bitmap-drawing nil))
+  (let ((scaled-width (* image-scale image-width))
+        (scaled-height (* image-scale image-height)))
+    (al:draw-scaled-bitmap image-bitmap 0 0
+                           image-width image-height
+                           (- position-x (* 0.5 scaled-width))
+                           (- position-y (* 0.5 scaled-height))
+                           scaled-width scaled-height 0)))
+
+(ecs:define-system move
+  (:components-ro (speed)
+   :components-rw (position)
+   :arguments ((:dt single-float)))
+  (incf position-x (* dt speed-x))
+  (incf position-y (* dt speed-y)))
+
+
+
+;; Initialization
+
 (defun init ()
-  ;; TODO : put your initialization logic here
-  )
+  (ecs:make-storage)
+  (let ((asteroid-bitmaps
+          (map 'list
+               #'(lambda (filename)
+                   (al:ensure-loaded
+                     #'al:load-bitmap filename))
+               asteroid-images)))
+    (dotimes (_ 1000)
+      (ecs:make-object `((:position
+                          :x ,(float (random +window-width+))
+                          :y ,(float (random +window-height+)))
+                         (:image
+                          :bitmap ,(alexandria:random-elt
+                                     asteroid-bitmaps)
+                          :width 64.0 :height 64.0)))))
+)
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
 
+
+;;; Update Loop
+
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
-
-  ;; TODO : put your game logic here
-  )
+  (ecs:run-systems))
 
 (defvar *font*)
 
