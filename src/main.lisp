@@ -96,6 +96,8 @@
       (ecs:make-object `((:position
                           :x ,(float (random +window-width+))
                           :y ,(float (random +window-height+)))
+                         (:speed :x ,(- (random 100.0) 50.0)
+                                 :y ,(- (random 100.0) 50.0))
                          (:image
                           :bitmap ,(alexandria:random-elt
                                      asteroid-bitmaps)
