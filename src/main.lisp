@@ -113,7 +113,7 @@
 (defun update (dt)
   (unless (zerop dt)
     (setf *fps* (round 1 dt)))
-  (ecs:run-systems))
+  (ecs:run-systems :dt (float dt 0.0)))
 
 (defvar *font*)
 
