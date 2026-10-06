@@ -6,7 +6,6 @@
                #:cl-fast-ecs
                #:cl-liballegro
                #:cl-liballegro-nuklear
-               
                #:livesupport)
   :serial t
   :components ((:module "src"

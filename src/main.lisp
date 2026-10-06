@@ -19,6 +19,16 @@
 
 (define-constant +config-path+ "../config.cfg" :test #'string=)
 
+;; Global variables
+(declaim
+  (type single-float
+        *planet-x* *planet-y* *planet-width* *planet-height* *planet-mass*))
+(defvar *planet-x*)
+(defvar *planet-y*)
+(defvar *planet-width*)
+(defvar *planet-height*)
+(defvar *planet-mass* 500000.0)
+
 ;; Asteroid assets
 
 (define-constant asteroid-images
@@ -81,11 +91,25 @@
   (incf position-y (* dt speed-y)))
 
 
-
 ;; Initialization
 
 (defun init ()
   (ecs:make-storage)
+  (let ((planet-bitmap
+          (al:ensure-loaded
+            #'al:load-bitmap
+            "../Resources/parallax-space-big-planet.png")))
+    (setf *planet-width*
+          (float (al:get-bitmap-width planet-bitmap))
+          *planet-height*
+          (float (al:get-bitmap-height planet-bitmap))
+          *planet-x* (/ +window-width+ 2.0)
+          *planet-y* (/ +window-height+ 2.0))
+    (ecs:make-object `((:position :x ,*planet-x*
+                                  :y ,*planet-y*)
+                       (:image :bitmap ,planet-bitmap
+                               :width ,*planet-width*
+                               :height ,*planet-height*))))
   (let ((asteroid-bitmaps
           (map 'list
                #'(lambda (filename)
