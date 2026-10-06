@@ -69,6 +69,9 @@
   (height 0.0 :type single-float)
   (scale 1.0 :type single-float))
 
+(ecs:define-component planet
+  "Tag component to indicate that entity is a planet.")
+
 ;; System definitions
 
 (ecs:define-system draw-images
@@ -90,6 +93,27 @@
   (incf position-x (* dt speed-x))
   (incf position-y (* dt speed-y)))
 
+(ecs:define-system crash-asteroids
+  (:components-ro (position)
+   :components-no (planet)
+   :with ((planet-half-width planet-half-height)
+          :of-type (single-float single-float)
+          := (values (/ *planet-width* 2.0)
+                     (/ *planet-height* 2.0))))
+  (when
+    (<= (+
+          (expt
+            (/ (- position-x *planet-x*) planet-half-width)
+            2)
+          (expt
+            (/ (- position-y *planet-y*) planet-half-height)
+            2))
+        1.0)
+    (ecs:delete-entity entity)))
+
+
+
+
 
 ;; Initialization
 
@@ -105,7 +129,8 @@
           (float (al:get-bitmap-height planet-bitmap))
           *planet-x* (/ +window-width+ 2.0)
           *planet-y* (/ +window-height+ 2.0))
-    (ecs:make-object `((:position :x ,*planet-x*
+    (ecs:make-object `((:planet)
+                       (:position :x ,*planet-x*
                                   :y ,*planet-y*)
                        (:image :bitmap ,planet-bitmap
                                :width ,*planet-width*
@@ -125,6 +150,7 @@
                          (:image
                           :bitmap ,(alexandria:random-elt
                                      asteroid-bitmaps)
+                          :scale ,(+ 0.1 (random 0.9))
                           :width 64.0 :height 64.0)))))
 )
 
