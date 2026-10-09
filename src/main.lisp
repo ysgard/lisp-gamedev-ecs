@@ -72,6 +72,11 @@
 (ecs:define-component planet
   "Tag component to indicate that entity is a planet.")
 
+(ecs:define-component acceleration
+  "Determines the acceleration of the object, in pixels/s^2"
+  (x 0.0 :type single-float :documentation "X coordinate")
+  (y 0.0 :type single-float :documentation "Y coordinate"))
+
 ;; System definitions
 
 (ecs:define-system draw-images
@@ -111,14 +116,50 @@
         1.0)
     (ecs:delete-entity entity)))
 
+(ecs:define-system accelerate
+    (:components-ro (acceleration)
+     :components-rw (speed)
+     :arguments ((:dt single-float)))
+  (incf speed-x (* dt acceleration-x))
+  (incf speed-y (* dt acceleration-y)))
 
-
-
+(ecs:define-system pull
+    (:components-ro (position)
+     :components-rw (acceleration))
+  (let* ((distance-x (- *planet-x* position-x))
+         (distance-y (- *planet-y* position-y))
+         (angle (atan distance-y distance-x))
+         (distance-squared (+ (expt distance-x 2)
+                              (expt distance-y 2)))
+         (acceleration (/ *planet-mass* distance-squared)))
+    (setf acceleration-x (* acceleration (cos angle))
+          acceleration-y (* acceleration (sin angle)))))
 
 ;; Initialization
 
 (defun init ()
   (ecs:make-storage)
+  (let ((background-bitmap-1
+          (al:ensure-loaded
+           #'al:load-bitmap
+           "../Resources/parallax-space-stars.png"))
+        (background-bitmap-2
+          (al:ensure-loaded
+           #'al:load-bitmap
+           "../Resources/parallax-space-far-planets.png")))
+    (ecs:make-object
+     `((:position :x 400.0 :y 200.0)
+       (:image
+        :bitmap ,background-bitmap-1
+        :width ,(float (al:get-bitmap-width background-bitmap-1))
+        :height ,(float (al:get-bitmap-height background-bitmap-1)))))
+    (ecs:make-object
+     `((:position :x 100.0 :y 100.0)
+       (:image
+        :bitmap ,background-bitmap-2
+        :width ,(float (al:get-bitmap-width background-bitmap-2))
+        :height ,(float (al:get-bitmap-height background-bitmap-2))))))
+
   (let ((planet-bitmap
           (al:ensure-loaded
             #'al:load-bitmap
@@ -141,18 +182,20 @@
                    (al:ensure-loaded
                      #'al:load-bitmap filename))
                asteroid-images)))
-    (dotimes (_ 1000)
-      (ecs:make-object `((:position
-                          :x ,(float (random +window-width+))
-                          :y ,(float (random +window-height+)))
-                         (:speed :x ,(- (random 100.0) 50.0)
-                                 :y ,(- (random 100.0) 50.0))
-                         (:image
-                          :bitmap ,(alexandria:random-elt
-                                     asteroid-bitmaps)
-                          :scale ,(+ 0.1 (random 0.9))
-                          :width 64.0 :height 64.0)))))
-)
+    (dotimes (_ 5000)
+      (let ((r (random 20.0))
+            (angle (float (random (* 2 pi)) 0.0)))
+        (ecs:make-object `((:position
+                            :x ,(+ 200.0 (* r (cos angle)))
+                            :y ,(+ *planet-y* (* r (sin angle))))
+                           (:speed :x ,(+ -5.0 (random 15.0))
+                                   :y ,(+ 30.0 (random 30.0)))
+                           (:acceleration)
+                           (:image
+                            :bitmap ,(alexandria:random-elt asteroid-bitmaps)
+                            :scale ,(+ 0.1 (random 0.9))
+                            :width 64.0 :height 64.0))))))
+  )
 
 (declaim (type fixnum *fps*))
 (defvar *fps* 0)
@@ -269,4 +312,3 @@
     (float-features:with-float-traps-masked
         (:divide-by-zero :invalid :inexact :overflow :underflow)
       (al:run-main 0 (cffi:null-pointer) (cffi:callback %main)))))
-
